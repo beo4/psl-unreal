@@ -1,6 +1,7 @@
 // Self-test of the ride physics without a browser:   node game/selftest.mjs
 // - a key-pressing rider gets through all gates of both lanes and finishes in a plausible time
 // - replaying the recorded inputs gives exactly the same run (deterministic)
+// - pointing the board uphill gains no height beyond what the start push gives, then it turns downhill
 // - riding straight down is a gate fault, holding one edge leaves the course: out at once, no time
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -30,6 +31,10 @@ for (const lane of [0, 1]) {
   console.log(`${L.color}: ${L.gates.length} Tore, ${a.s.time.toFixed(3)} s, max ${(a.vmax * 3.6).toFixed(0)} km/h, ` +
               `Wiederholung identisch (${a.s.steps} Schritte à ${(DT * 1000).toFixed(2)} ms)`);
 }
+{ const s = start(track, 0), z0 = track.ground(s.x, s.y); let zmax = z0; s.heading += Math.PI;
+  for (let i = 0; i < 20 / DT && !s.finished; i++) { step(track, s, 0, 0); zmax = Math.max(zmax, track.ground(s.x, s.y)); }
+  assert.ok(zmax - z0 < 0.6, `uphill: gained ${zmax - z0} m`); assert.ok(track.ground(s.x, s.y) < z0 - 1 || s.finished, 'does not come back down');
+  console.log(`bergauf gestartet: höchstens ${(zmax - z0).toFixed(2)} m Höhe gewonnen, dann talwärts`); }
 const straight = run(0, () => [0, 0]);
 assert.match(straight.s.fail, /^Torfehler an Tor \d+$/); assert.equal(straight.s.time, null); assert.ok(straight.s.t < 10);
 const left = run(0, () => [-30, 0]);                      // a little left edge all the way: a wide arc off the course

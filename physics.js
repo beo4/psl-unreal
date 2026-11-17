@@ -18,7 +18,8 @@ export const P = {
   CARVE: 0.05,        // extra friction per g of lateral load
   SKID: 0.6,          // braking per m/s^2 of lateral demand the edge cannot hold
   DRAG: 0.006,        // air drag, 1/m
-  V_MIN: 1.0,         // m/s, the rider never stops completely before the finish
+  V_PIVOT: 2.0,       // m/s, below this the board swings into the fall line (a rider who nearly stands turns downhill)
+  PIVOT: 1.5,         // rad/s of that swing at standstill
   GATE_TOL: 0.25,     // m the line may cut inside the stubby (board and body are not points)
   BRAKE: 4.0,         // m/s^2 after the finish
 };
@@ -79,9 +80,16 @@ export function step(track, s, e8, w8) {
   const want = P.G * Math.tan(phi);
   const lat = Math.min(want, P.G * (P.GRIP + P.GRIP_W * s.weight));
   s.skid = want - lat;
-  const v = Math.max(s.v, P.V_MIN);
+  const v = Math.max(s.v, 1);                                // only against division by zero
   const kappa = Math.min(lat / (v * v), Math.sin(phi) / (P.SIDECUT * Math.cos(phi)));   // ponytail: lateral pull of the slope ignored (no side slip); add when traverses matter
   s.heading -= Math.sign(s.edge) * kappa * s.v * DT;
+  if (run && s.v < P.V_PIVOT) {                              // nearly standing: gravity turns the board downhill, nobody rides uphill
+    const gx = track.ground(s.x + 0.5, s.y) - track.ground(s.x - 0.5, s.y), gy = track.ground(s.x, s.y + 0.5) - track.ground(s.x, s.y - 0.5);
+    if (Math.hypot(gx, gy) > 0.01) {
+      let d = Math.atan2(-gy, -gx) - s.heading; d = Math.atan2(Math.sin(d), Math.cos(d));
+      s.heading += clamp(d, -1, 1) * P.PIVOT * (1 - s.v / P.V_PIVOT) * DT;
+    }
+  }
 
   // speed along the board: gravity on the slope, snow friction, air drag, skid
   const cx = Math.cos(s.heading), cy = Math.sin(s.heading);
@@ -89,7 +97,7 @@ export function step(track, s, e8, w8) {
   const cos = 1 / Math.sqrt(1 + s.slope * s.slope);
   const mu = P.MU + P.MU_W * s.weight + P.CARVE * lat / P.G;
   const a = run ? P.G * cos * (-s.slope - mu) - P.DRAG * s.v * s.v - P.SKID * s.skid : -P.BRAKE;
-  s.v = Math.max(s.v + a * DT, run ? P.V_MIN : 0);
+  s.v = Math.max(s.v + a * DT, 0);
   s.x += cx * s.v * cos * DT; s.y += cy * s.v * cos * DT;
   s.t += DT; s.steps++;
   if (!run) return s;
