@@ -161,7 +161,7 @@ function draw(dt) {
   }
   renderer.render(scene, camera);
   $('time').textContent = (me.time ?? me.t).toFixed(2);
-  $('speed').textContent = `${(me.v * 3.6).toFixed(0)} km/h`;
+  $('speed').textContent = `${(me.v * 3.6).toFixed(0)} km/h` + (Math.abs(me.slip) > 0.6 ? ' · rutscht' : '');
   $('gate').textContent = `Tor ${Math.min(me.gate + 1, track.lanes[lane].gates.length)}/${track.lanes[lane].gates.length} · ${track.lanes[lane].color === 'red' ? 'Rot' : 'Blau'}` + (best ? ` · Best ${best.time.toFixed(2)}` : '');
   $('sensor').textContent = input.status();
   $('count').style.display = mode === 'count' ? 'flex' : 'none';
@@ -194,7 +194,7 @@ addEventListener('keydown', (e) => { if (e.code === 'Space' || e.code === 'Enter
 
 menu('Parallelslalom ' + json.name,
   'Handy quer mit beiden Händen halten: links/rechts kippen lenkt, vor/zurück neigen verlagert das Gewicht ' +
-  '(vorn: mehr Grip, hinten: schneller). Am Rechner: Pfeiltasten, V = Ansicht, R = Neustart.\n' +
+  '(vorn: mehr Grip, hinten: schneller). Die Kante bestimmt den Bogen; zu schnell für den Bogen rutscht das Brett und bremst. Am Rechner: Pfeiltasten, V = Ansicht, R = Neustart.\n' +
   'Am Stubby außen vorbei, auf der Seite ohne lange Stange. Torfehler oder Verlassen der Piste (oranges Netz) = ausgeschieden. Nach „Start“ das Handy bis zum Ende des Countdowns ruhig in Grundstellung halten.');
 window.game = { get me() { return me; }, get mode() { return mode; }, get best() { return best; }, track, input };   // for checks from the console
 requestAnimationFrame(frame);

@@ -2,7 +2,7 @@
 // for checking the game in a browser without hands. Not part of the game itself.
 import { P } from './physics.js';
 
-const PASS = 1.3, LOOK = 0.45, DEAD = 0.3;   // m beside the stubby, s of look-ahead, edge needed before a key is pressed
+const PASS = 1.3, LOOK = 0.45, DEAD = 0.05;   // m beside the stubby, s of look-ahead, edge needed before a key is pressed
 
 /** Smooth line start -> around every stubby -> finish (centripetal Catmull-Rom, as in blender/riders.py). */
 export function line(track, lane, stepM = 0.25) {
@@ -32,7 +32,11 @@ export function pilot(track, lane) {
     const look = Math.max(3, s.v * LOOK), j = Math.min(path.length - 1, i + Math.round(look / 0.25));
     const dx = path[j][0] - s.x, dy = path[j][1] - s.y, dist = Math.hypot(dx, dy) || 1;
     let al = Math.atan2(dy, dx) - s.heading; al = Math.atan2(Math.sin(al), Math.cos(al));
-    const need = Math.atan(2 * Math.sin(-al) / dist * s.v * s.v / P.G) / P.MAX_EDGE;   // edge for that curve, + = right
-    return [Math.abs(need) > DEAD ? Math.sign(need) * 127 : 0, Math.abs(need) > 0.6 ? 127 : 0];
+    const k = 2 * Math.sin(-al) / dist * P.SIDECUT;                        // wanted curvature (+ = right) times the sidecut radius
+    const phi = Math.abs(k) <= 1 ? Math.abs(k) * P.ENGAGE : Math.max(P.ENGAGE, Math.acos(Math.min(1, 1 / Math.abs(k))));
+    const want = Math.sign(k) * Math.min(1, phi / P.MAX_EDGE);              // edge that carves that curve
+    // keys only: press towards the wanted edge, let go when past it
+    const key = want >= 0 ? (s.edge < want ? 1 : 0) : (s.edge > want ? -1 : 0);
+    return [Math.abs(want) > DEAD ? key * 127 : 0, s.load > 1.2 ? 127 : 0];
   };
 }

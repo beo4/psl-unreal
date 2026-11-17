@@ -25,7 +25,9 @@ Direkt als Datei geöffnet (file://) lädt die Seite nicht, der Browser braucht 
 Am Stubby außen vorbei (Seite ohne lange Stange). Torfehler, Verlassen der Piste (oranges Netz = Korridor aus
 den Kursdaten) oder Ziel verfehlt = sofort ausgeschieden, keine Zeit.
 Der beste gültige Lauf fährt beim nächsten Lauf als Geist mit (auf seiner Spur; mit „Spur“ fährt man daneben).
-Gewicht vorn: mehr Grip, etwas langsamer. Gewicht hinten: schneller, weniger Grip. Zu viel Kante rutscht und bremst.
+Der Kantenwinkel bestimmt den Bogen (Radius = Taillierung × cos Kantenwinkel), unabhängig vom Tempo. Ist man für den
+Bogen zu schnell, hält die Kante nicht: das Brett rutscht, driftet weit und bremst. Ein flaches Brett hält seitlich kaum
+und dreht in die Fahrtrichtung. Gewicht vorn: mehr Grip, etwas langsamer. Gewicht hinten: schneller, weniger Grip.
 
 ## Dateien
 - `physics.js` Fahrphysik: feste Schritte (120 Hz), nur aus den zwei Eingaben, keine Uhr. Alle Stellwerte in `P`.

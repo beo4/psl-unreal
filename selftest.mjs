@@ -31,7 +31,7 @@ for (const lane of [0, 1]) {
   console.log(`${L.color}: ${L.gates.length} Tore, ${a.s.time.toFixed(3)} s, max ${(a.vmax * 3.6).toFixed(0)} km/h, ` +
               `Wiederholung identisch (${a.s.steps} Schritte à ${(DT * 1000).toFixed(2)} ms)`);
 }
-{ const s = start(track, 0), z0 = track.ground(s.x, s.y); let zmax = z0; s.heading += Math.PI;
+{ const s = start(track, 0), z0 = track.ground(s.x, s.y); let zmax = z0; s.heading += Math.PI; s.vx = -s.vx; s.vy = -s.vy;
   for (let i = 0; i < 20 / DT && !s.finished; i++) { step(track, s, 0, 0); zmax = Math.max(zmax, track.ground(s.x, s.y)); }
   assert.ok(zmax - z0 < 0.6, `uphill: gained ${zmax - z0} m`); assert.ok(track.ground(s.x, s.y) < z0 - 1 || s.finished, 'does not come back down');
   console.log(`bergauf gestartet: höchstens ${(zmax - z0).toFixed(2)} m Höhe gewonnen, dann talwärts`); }
@@ -39,4 +39,9 @@ const straight = run(0, () => [0, 0]);
 assert.match(straight.s.fail, /^Torfehler an Tor \d+$/); assert.equal(straight.s.time, null); assert.ok(straight.s.t < 10);
 const left = run(0, () => [-30, 0]);                      // a little left edge all the way: a wide arc off the course
 assert.equal(left.s.fail, 'Piste verlassen'); assert.equal(left.s.time, null);
+{ // too fast for the arc: the edge slips and the board brakes (hockey stop), it does not carve on rails
+  const s = start(track, 0); s.vx *= 5; s.vy *= 5; let slip = 0;
+  for (let i = 0; i < 1 / DT; i++) { step(track, s, 127, 0); slip = Math.max(slip, Math.abs(s.slip)); }
+  assert.ok(slip > 2 && s.v < 12, `no slip: ${slip}, v ${s.v}`);
+  console.log(`15 m/s mit Vollkante: rutscht bis ${slip.toFixed(1)} m/s seitlich, nach 1 s noch ${s.v.toFixed(1)} m/s`); }
 console.log(`geradeaus: ${straight.s.fail} nach ${straight.s.t.toFixed(1)} s, leicht links: ${left.s.fail} nach ${left.s.t.toFixed(1)} s -> ausgeschieden\nselftest ok`);
