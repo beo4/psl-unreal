@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>PSL Prototyp</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #9db8d1; color: #fff;
+    font: 15px/1.35 -apple-system, system-ui, sans-serif; touch-action: none; overscroll-behavior: none;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  canvas { position: fixed; inset: 0; width: 100vw; height: 100dvh; display: block; }
+  .hud { position: fixed; text-shadow: 0 1px 3px #000a; pointer-events: none; }
+  #time { top: max(8px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); font: 700 30px/1 ui-monospace, Menlo, monospace; }
+  #info { top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); text-align: center; font-weight: 600; }
+  #fail { color: #ffd0d0; }
+  #sensor { bottom: 22px; left: max(12px, env(safe-area-inset-left)); font-size: 12px; }
+  #credit { bottom: 6px; left: max(12px, env(safe-area-inset-left)); font-size: 10px; opacity: .85; }
+  #buttons { position: fixed; top: max(8px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); display: flex; gap: 6px; }
+  button { font: 600 14px system-ui; color: #fff; background: #0008; border: 1px solid #fff6; border-radius: 8px; padding: 8px 10px; }
+  #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #0006; }
+  #card { background: #111c; border-radius: 14px; padding: 16px 22px; max-width: 520px; text-align: center; }
+  #card h1 { margin: 0 0 6px; font-size: 20px; } #card p { margin: 6px 0; white-space: pre-line; }
+  #go { font-size: 20px; padding: 12px 34px; background: #1769d1; border: 0; margin-top: 8px; }
+  #count { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; font: 800 90px system-ui; text-shadow: 0 2px 8px #000; pointer-events: none; }
+  #settings { position: fixed; top: 52px; right: 10px; background: #111d; border-radius: 10px; padding: 10px 14px; display: none; pointer-events: auto; }
+  #settings label { display: block; margin: 6px 0; } #settings input[type=range] { width: 150px; vertical-align: middle; }
+  #turn { position: fixed; inset: 0; background: #123; display: none; align-items: center; justify-content: center; font-size: 22px; z-index: 9; }
+  @media (orientation: portrait) and (pointer: coarse) { #turn { display: flex; } }
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="time" class="hud">0.00</div>
+<div id="info" class="hud"><span id="speed"></span> · <span id="gate"></span><br><span id="fail"></span></div>
+<div id="sensor" class="hud"></div>
+<div id="credit" class="hud"></div>
+<div id="buttons">
+  <button id="bView">Ansicht</button><button id="bLane">Spur</button><button id="bRestart">Neustart</button><button id="bSet">⚙</button>
+</div>
+<div id="settings">
+  <label>Lenkbereich <input id="sSteer" type="range" min="10" max="45"> <span id="sSteerV"></span>°</label>
+  <label>Gewichtsbereich <input id="sWeight" type="range" min="8" max="40"> <span id="sWeightV"></span>°</label>
+  <label><input id="sFlipS" type="checkbox"> Lenkung umkehren</label>
+  <label><input id="sFlipW" type="checkbox"> Gewicht umkehren</label>
+  <button id="bClear">Bestzeit löschen</button>
+</div>
+<div id="count"></div>
+<div id="overlay"><div id="card"><h1 id="oTitle">PSL Prototyp</h1><p id="oText">Lädt …</p><button id="go">Start</button></div></div>
+<div id="turn">Handy quer halten ↻</div>
+<script type="module" src="main.js"></script>
+</body>
+</html>
