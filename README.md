@@ -22,7 +22,8 @@ Direkt als Datei geöffnet (file://) lädt die Seite nicht, der Browser braucht 
 6. ⚙: Lenk- und Gewichtsbereich in Grad (kleiner = empfindlicher), Lenkung/Gewicht umkehren, Bestzeit löschen.
 
 ## Regeln im Spiel
-Am Stubby außen vorbei (Seite ohne lange Stange). Tor verpasst oder Ziel verfehlt = Lauf ungültig.
+Am Stubby außen vorbei (Seite ohne lange Stange). Torfehler, Verlassen der Piste (oranges Netz = Korridor aus
+den Kursdaten) oder Ziel verfehlt = sofort ausgeschieden, keine Zeit.
 Der beste gültige Lauf fährt beim nächsten Lauf als Geist mit (auf seiner Spur; mit „Spur“ fährt man daneben).
 Gewicht vorn: mehr Grip, etwas langsamer. Gewicht hinten: schneller, weniger Grip. Zu viel Kante rutscht und bremst.
 

@@ -1,7 +1,7 @@
 // Self-test of the ride physics without a browser:   node game/selftest.mjs
 // - a key-pressing rider gets through all gates of both lanes and finishes in a plausible time
 // - replaying the recorded inputs gives exactly the same run (deterministic)
-// - riding straight down misses a gate, so the run is invalid
+// - riding straight down is a gate fault, holding one edge leaves the course: out at once, no time
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { makeTrack, start, step, DT } from './physics.js';
@@ -31,5 +31,7 @@ for (const lane of [0, 1]) {
               `Wiederholung identisch (${a.s.steps} Schritte à ${(DT * 1000).toFixed(2)} ms)`);
 }
 const straight = run(0, () => [0, 0]);
-assert.match(straight.s.fail, /Tor \d+ verpasst/);
-console.log(`geradeaus: ${straight.s.fail} -> ungültig\nselftest ok`);
+assert.match(straight.s.fail, /^Torfehler an Tor \d+$/); assert.equal(straight.s.time, null); assert.ok(straight.s.t < 10);
+const left = run(0, () => [-30, 0]);                      // a little left edge all the way: a wide arc off the course
+assert.equal(left.s.fail, 'Piste verlassen'); assert.equal(left.s.time, null);
+console.log(`geradeaus: ${straight.s.fail} nach ${straight.s.t.toFixed(1)} s, leicht links: ${left.s.fail} nach ${left.s.t.toFixed(1)} s -> ausgeschieden\nselftest ok`);

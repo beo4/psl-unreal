@@ -28,10 +28,8 @@ const V = (x, y, dz = 0) => new THREE.Vector3(x, y, Z(x, y) + dz);
 
 { // terrain: 1 m grid, piste (inside the corridor) brighter than the rest, fine noise so speed is visible
   const g = track.grid, pos = new Float32Array(g.nx * g.ny * 3), col = new Float32Array(g.nx * g.ny * 3), uv = new Float32Array(g.nx * g.ny * 2);
-  const poly = json.corridor;
-  const inPoly = (x, y) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const a = poly[i], b = poly[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
   for (let j = 0, k = 0; j < g.ny; j++) for (let i = 0; i < g.nx; i++, k++) {
-    const x = g.x0 + i, y = g.y0 + j, s = inPoly(x, y) ? 1 : 0.8;
+    const x = g.x0 + i, y = g.y0 + j, s = track.inCourse(x, y) ? 1 : 0.8;
     pos.set([x, y, track.h[k]], k * 3); col.set([s, s, s * 1.03], k * 3); uv.set([x / 6, y / 6], k * 2);
   }
   const idx = new Uint32Array((g.nx - 1) * (g.ny - 1) * 6);
@@ -43,6 +41,15 @@ const V = (x, y, dz = 0) => new THREE.Vector3(x, y, Z(x, y) + dz);
   for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) { const v = 222 + Math.random() * 33 - (y % 16 < 2 ? 22 : 0); cx.fillStyle = `rgb(${v},${v},${v})`; cx.fillRect(x, y, 1, 1); }
   const tex = new THREE.CanvasTexture(cv); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.colorSpace = THREE.SRGBColorSpace;
   scene.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, map: tex })));
+}
+{ // outer boundary of the course as a net, 1 m high, along the corridor polygon
+  const c = json.corridor, pos = [];
+  for (let i = 0; i < c.length; i++) {
+    const a = c[i], b = c[(i + 1) % c.length], za = Z(...a), zb = Z(...b);
+    pos.push(a[0], a[1], za, b[0], b[1], zb, b[0], b[1], zb + 1, a[0], a[1], za, b[0], b[1], zb + 1, a[0], a[1], za + 1);
+  }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xf07a12, transparent: true, opacity: 0.55, side: THREE.DoubleSide })));
 }
 { // trees from trees.csv
   const cone = new THREE.ConeGeometry(0.22, 1, 7).rotateX(Math.PI / 2).translate(0, 0, 0.5);
@@ -117,10 +124,10 @@ function finish() {
   const valid = !me.fail, was = best && best.time;
   if (valid && (!best || me.time < best.time)) { best = { lane, time: me.time, rec: Int8Array.from(rec) }; saveBest(); }
   const t = me.time == null ? '' : me.time.toFixed(2) + ' s';
-  const text = !valid ? `Lauf ungültig: ${me.fail}` + (best ? `\nBestzeit ${best.time.toFixed(2)} s` : '')
+  const text = !valid ? me.fail + (best ? `\nBestzeit ${best.time.toFixed(2)} s` : '')
     : was ? `${t}\n${me.time < was ? 'Neue Bestzeit' : 'Geist war schneller'}: ${(me.time - was >= 0 ? '+' : '') + (me.time - was).toFixed(2)} s gegen ${was.toFixed(2)} s`
     : `${t}\nErste gültige Zeit. Der nächste Lauf geht gegen diesen Lauf als Geist.`;
-  setTimeout(() => { if (mode === 'done') menu(valid ? 'Im Ziel' : 'Ungültig', text + '\nSpur wechseln: Knopf „Spur“ (Geist bleibt auf seiner Spur).', 'Nochmal'); }, 1200);
+  setTimeout(() => { if (mode === 'done') menu(valid ? 'Im Ziel' : 'Ausgeschieden', text + '\nSpur wechseln: Knopf „Spur“ (Geist bleibt auf seiner Spur).', 'Nochmal'); }, 1200);
 }
 function tick() {
   if (mode === 'count') { count -= DT; if (count <= 0) { input.calibrate(); mode = 'run'; } return; }
@@ -129,7 +136,7 @@ function tick() {
   if (!me.finished) rec.push(e, w);
   step(track, me, e, w);
   if (ghost) { step(track, ghost.s, ghost.rec[2 * ghost.i] | 0, ghost.rec[2 * ghost.i + 1] | 0); ghost.i++; }
-  if (me.fail && !$('fail').textContent) $('fail').textContent = `${me.fail} – Lauf ungültig`;
+  if (me.fail && !$('fail').textContent) $('fail').textContent = `Ausgeschieden: ${me.fail}`;
   if (me.finished && mode === 'run') finish();
 }
 
@@ -188,6 +195,6 @@ addEventListener('keydown', (e) => { if (e.code === 'Space' || e.code === 'Enter
 menu('Parallelslalom ' + json.name,
   'Handy quer mit beiden Händen halten: links/rechts kippen lenkt, vor/zurück neigen verlagert das Gewicht ' +
   '(vorn: mehr Grip, hinten: schneller). Am Rechner: Pfeiltasten, V = Ansicht, R = Neustart.\n' +
-  'Am Stubby außen vorbei, auf der Seite ohne lange Stange. Nach „Start“ das Handy bis zum Ende des Countdowns ruhig in Grundstellung halten.');
+  'Am Stubby außen vorbei, auf der Seite ohne lange Stange. Torfehler oder Verlassen der Piste (oranges Netz) = ausgeschieden. Nach „Start“ das Handy bis zum Ende des Countdowns ruhig in Grundstellung halten.');
 window.game = { get me() { return me; }, get mode() { return mode; }, get best() { return best; }, track, input };   // for checks from the console
 requestAnimationFrame(frame);

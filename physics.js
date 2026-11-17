@@ -36,7 +36,15 @@ export function makeTrack(json) {
     const i = Math.floor(fx), j = Math.floor(fy), u = fx - i, v = fy - j, o = j * g.nx + i;
     return (h[o] * (1 - u) + h[o + 1] * u) * (1 - v) + (h[o + g.nx] * (1 - u) + h[o + g.nx + 1] * u) * v;
   };
-  const inside = (x, y) => x > g.x0 + 1 && x < g.x0 + g.nx - 2 && y > g.y0 + 1 && y < g.y0 + g.ny - 2;
+  const poly = json.corridor;                              // outer boundary of the course (both lanes)
+  const inCourse = (x, y) => {
+    let c = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const a = poly[i], b = poly[j];
+      if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c;
+    }
+    return c;
+  };
   const lanes = json.lanes.map((l) => {
     const [fa, fb] = l.finish, mid = [(fa[0] + fb[0]) / 2, (fa[1] + fb[1]) / 2];
     const dir = unit(sub(mid, l.start));                     // downhill axis of the lane
@@ -48,7 +56,7 @@ export function makeTrack(json) {
       gates: l.gates.map((q) => ({ turn: q.turn, outer: q.outer, s: dot(sub(q.turn, l.start), dir), side: unit(sub(q.turn, q.outer)) })),
     };
   });
-  return { json, ground, inside, lanes, h, grid: g };
+  return { json, ground, inCourse, lanes, h, grid: g };
 }
 
 /** State at the start gate of a lane. */
@@ -86,21 +94,23 @@ export function step(track, s, e8, w8) {
   s.t += DT; s.steps++;
   if (!run) return s;
 
-  // gates: when the rider passes the height of the next stubby, he must be on the side away from the long pole
+  // gates: when the rider passes the height of the next stubby, he must be on the side away from the long pole.
+  // A gate fault or leaving the course ends the run at once (out, no time).
   const p = [s.x, s.y], prog = dot(sub(p, L.start), L.dir);
   while (s.gate < L.gates.length && prog >= L.gates[s.gate].s) {
     const q = L.gates[s.gate];
-    if (dot(sub(p, q.turn), q.side) < -P.GATE_TOL && !s.fail) s.fail = `Tor ${s.gate + 1} verpasst`;
+    if (dot(sub(p, q.turn), q.side) < -P.GATE_TOL) { s.fail = `Torfehler an Tor ${s.gate + 1}`; s.finished = true; return s; }
     s.gate++;
   }
   // finish: crossing the own half of the finish line, time interpolated inside the step
   const rel = sub(p, L.finish.a), f = dot(rel, L.finish.n);
   if (f >= 0 && s.f < 0) {
     const u = dot(rel, L.finish.dir);
-    if ((u < 0 || u > L.finish.len || s.gate < L.gates.length) && !s.fail) s.fail = 'Ziel verfehlt';
-    s.finished = true; s.time = s.t - DT * f / (f - s.f);
+    s.finished = true;
+    if (u < 0 || u > L.finish.len || s.gate < L.gates.length) s.fail = 'Ziel verfehlt'; else s.time = s.t - DT * f / (f - s.f);
   }
   s.f = f;
-  if (!track.inside(s.x, s.y)) { s.fail = s.fail || 'Piste verlassen'; s.finished = true; s.v = 0; }
+  // outer boundary: the corridor polygon ends exactly on the start and finish line, so the first and last metre are not checked
+  if (!s.finished && prog > 1 && f < -1 && !track.inCourse(s.x, s.y)) { s.fail = 'Piste verlassen'; s.finished = true; }
   return s;
 }
