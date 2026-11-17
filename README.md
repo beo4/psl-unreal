@@ -34,4 +34,7 @@ und dreht in die Fahrtrichtung. Gewicht vorn: mehr Grip, etwas langsamer. Gewich
 - `input.js` Sensor, Tastatur, Finger -> zwei Werte.
 - `main.js` Darstellung (three.js vom CDN), Ablauf, Aufzeichnung, Geist.
 - `autopilot.js`, `selftest.mjs` Selbsttest ohne Browser: `node game/selftest.mjs`
-- `tracks/<site>_<variante>.json` aus `python3 tools/export_game.py <site> <variante>`; im Spiel mit `?track=<site>_<variante>`.
+- `tracks/<site>_<variante>.json` aus `python3 tools/export_game.py <site> <variante>` = Kurs wie geplant.
+- `tracks/<site>_<variante>_spiel.json` aus `python3 tools/export_game.py <site> <variante> 16 2.8` = leichter gesetzter
+  Spielkurs (16 Schwungtore, Versatz ±2,8 m; erstes und letztes Tor, Start, Ziel, Gelände wie geplant). Das Spiel startet
+  damit; der Knopf „Originalkurs“ bzw. `?track=<site>_<variante>` wechselt.

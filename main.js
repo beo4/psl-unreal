@@ -7,12 +7,13 @@ import { createInput } from './input.js';
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);                       // the data is z-up
 const $ = (id) => document.getElementById(id);
 const COLORS = { red: 0xd8222a, blue: 0x1e5fd0 };
-const trackId = new URLSearchParams(location.search).get('track') || 'ruhpolding_A2';
+const trackId = new URLSearchParams(location.search).get('track') || 'ruhpolding_A2_spiel';
+const other = trackId.endsWith('_spiel') ? trackId.slice(0, -6) : trackId + '_spiel';   // planned course <-> easier game course
 
 const json = await (await fetch(`tracks/${trackId}.json`)).json();
 const track = makeTrack(json);
 const input = createInput($('view'));
-$('credit').textContent = `Geodaten: ${json.source} · ${json.name} · Planungsstand, Fahrphysik nicht kalibriert`;
+$('credit').textContent = `Geodaten: ${json.source} · ${json.name}${json.id.endsWith('_spiel') ? '' : ' · Planungsstand'} · Fahrphysik nicht kalibriert`;
 
 // ---------- scene ----------
 const renderer = new THREE.WebGLRenderer({ canvas: $('view'), antialias: true });
@@ -183,6 +184,8 @@ $('go').onclick = async () => {
 $('bView').onclick = () => { view = view === 'chase' ? 'ego' : 'chase'; };
 $('bLane').onclick = () => { lane = 1 - lane; begin(); };
 $('bRestart').onclick = begin;
+$('bTrack').textContent = other.endsWith('_spiel') ? 'Spielkurs' : 'Originalkurs';
+$('bTrack').onclick = () => { location.search = '?track=' + other; };
 $('bSet').onclick = () => { const s = $('settings').style; s.display = s.display === 'block' ? 'none' : 'block'; };
 $('bClear').onclick = () => { best = null; ghost = null; try { localStorage.removeItem(KEY); } catch {} };
 for (const [id, key, out] of [['sSteer', 'steerDeg', 'sSteerV'], ['sWeight', 'weightDeg', 'sWeightV']]) {
